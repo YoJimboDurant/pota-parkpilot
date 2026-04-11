@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ParkPilot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 1rem;
+      max-width: 800px;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .row {
+      margin-bottom: 0.75rem;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      max-width: 420px;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .operators-box label {
+      display: inline-block;
+      font-weight: normal;
+      margin-right: 1rem;
+    }
+
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .status {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .muted {
+      color: #666;
+    }
+
+    code {
+      background: #f4f4f4;
+      padding: 0.1rem 0.3rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>POTA ParkPilot</h1>
+
+  <!-- ========================= -->
+  <!-- Current Session -->
+  <!-- ========================= -->
+  <div class="card">
+    <h2>Current Session</h2>
+
+    {% if session_dx %}
+      <div class="status"><strong>Status:</strong> {{ session_dx.status }}</div>
+      <div class="row"><strong>Session ID:</strong> {{ session_dx.session_id }}</div>
+      <div class="row"><strong>Date:</strong> {{ session_dx.session_date_local }}</div>
+      <div class="row"><strong>Park:</strong> {{ session_dx.park_id }}</div>
+      <div class="row"><strong>Operators Present:</strong> {{ ", ".join(session_dx.operators_present_lx) }}</div>
+      <div class="row"><strong>Active Operator:</strong> {{ session_dx.active_operator }}</div>
+
+      <form method="post" action="{{ url_for('session_set_active_operator') }}">
+        <div class="row">
+          <label for="active_operator">Switch Active Operator</label>
+          <select name="active_operator">
+            {% for op_x in session_dx.operators_present_lx %}
+              <option value="{{ op_x }}" {% if op_x == session_dx.active_operator %}selected{% endif %}>
+                {{ op_x }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit">Set Active Operator</button>
+      </form>
+
+      <form method="post" action="{{ url_for('session_close') }}">
+        <button type="submit">Close Session</button>
+      </form>
+
+    {% else %}
+      <p>No active session.</p>
+    {% endif %}
+  </div>
+
+  <!-- ========================= -->
+  <!-- Logging -->
+  <!-- ========================= -->
+{% if session_dx and session_dx.status == "active" %}
+<div class="card">
+  <h2>Add Contact</h2>
+
+  <form method="post" action="{{ url_for('add_manual_contact') }}">
+    <div class="row">
+      <label>Callsign</label>
+      <input type="text" name="call" placeholder="K1ABC" required>
+    </div>
+
+    <div class="row">
+      <label>Mode</label>
+      <select name="mode" id="mode_select">
+        <option value="CW" {% if session_dx.last_mode == "CW" %}selected{% endif %}>CW</option>
+        <option value="SSB" {% if session_dx.last_mode == "SSB" %}selected{% endif %}>SSB</option>
+        <option value="SSTV" {% if session_dx.last_mode == "SSTV" %}selected{% endif %}>SSTV</option>
+        <option value="DIGITAL" {% if session_dx.last_mode == "DIGITAL" %}selected{% endif %}>DIGITAL</option>
+        <option value="OTHER" {% if session_dx.last_mode == "OTHER" %}selected{% endif %}>OTHER</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>RST Sent</label>
+      <input type="text" name="rst_sent" id="rst_sent" value="599">
+    </div>
+
+    <div class="row">
+      <label>RST Received</label>
+      <input type="text" name="rst_rcvd" id="rst_rcvd" value="599">
+    </div>
+
+    <div class="row">
+      <label>Notes</label>
+      <input type="text" name="notes" placeholder="P2P, S2S, QRP, special note">
+    </div>
+
+    <button type="submit">Save Contact</button>
+  </form>
+</div>
+
+<script>
+  (function() {
+    const modeSelect = document.getElementById("mode_select");
+    const rstSent = document.getElementById("rst_sent");
+    const rstRcvd = document.getElementById("rst_rcvd");
+
+    function defaultReportForMode(mode) {
+      if (mode === "SSB") {
+        return "59";
+      }
+      if (mode === "SSTV") {
+        return "595";
+      }
+      return "599";
+    }
+
+    function updateReportsForMode() {
+      const mode = modeSelect.value;
+      const defaultReport = defaultReportForMode(mode);
+
+      rstSent.value = defaultReport;
+      rstRcvd.value = defaultReport;
+    }
+
+    modeSelect.addEventListener("change", updateReportsForMode);
+
+    // set reports correctly on first page load
+    updateReportsForMode();
+  })();
+</script>
+{% endif %}
+  <!-- ========================= -->
+  <!-- Start / Resume Session -->
+  <!-- ========================= -->
+  <div class="card">
+    <h2>Start or Resume Session</h2>
+
+    <form method="post" action="{{ url_for('session_start') }}">
+      <div class="row">
+        <label>Park ID</label>
+        <input type="text" name="park_id" placeholder="US-0000" required>
+      </div>
+
+      <div class="row operators-box">
+        <label>Operators Present</label>
+        {% for op_x in cfg_dx["operators"] %}
+          <label>
+            <input type="checkbox" name="operators_present" value="{{ op_x }}" checked>
+            {{ op_x }}
+          </label>
+        {% endfor %}
+      </div>
+
+      <div class="row">
+        <label>Active Operator</label>
+        <select name="active_operator">
+          {% for op_x in cfg_dx["operators"] %}
+            <option value="{{ op_x }}">{{ op_x }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit">Start / Resume Session</button>
+    </form>
+  </div>
+
+</body>
+</html>

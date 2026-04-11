@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Git
+.git/
+
+# R / RStudio
+.Rproj.user/
+*.Rhistory
+*.RData
+*.Ruserdata
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+*.tmp
+
+# Data (runtime only)
+data/exports/*
+data/sessions/*
+!data/exports/.gitkeep
+!data/sessions/.gitkeep
