@@ -10,7 +10,8 @@ from parkpilot.core.session_manager import (
     close_current_session,
     get_current_session,
     set_active_operator,
-    set_last_mode,  
+    set_last_mode,
+    set_last_band,
     start_or_resume_session,
 )
 
@@ -88,7 +89,7 @@ def create_app() -> Flask:
     def session_close():
         close_current_session()
         return redirect(url_for("index"))
-      
+
     @app.route("/contact/manual", methods=["POST"])
     def add_manual_contact():
         session_dx = get_current_session()
@@ -98,10 +99,13 @@ def create_app() -> Flask:
 
         call_x = request.form.get("call", "").upper().strip()
         mode_x = request.form.get("mode", "CW").upper().strip()
-        set_last_mode(mode_x)
+        band_x = request.form.get("band", "20M").upper().strip()
         rst_sent_x = request.form.get("rst_sent", "599").strip()
         rst_rcvd_x = request.form.get("rst_rcvd", "599").strip()
         notes_x = request.form.get("notes", "").strip()
+
+        set_last_mode(mode_x)
+        set_last_band(band_x)
 
         operators_in_qso_lx = [
             op.upper().strip()
@@ -128,7 +132,8 @@ def create_app() -> Flask:
 
         if contacts_path_x.exists():
             with open(contacts_path_x, "r", encoding="utf-8") as fx:
-                contacts_lx = json.load(fx)
+                raw_x = fx.read().strip()
+            contacts_lx = json.loads(raw_x) if raw_x else []
         else:
             contacts_lx = []
 
@@ -139,6 +144,7 @@ def create_app() -> Flask:
             "operator": session_dx.active_operator,
             "operators_in_qso_lx": operators_in_qso_lx,
             "call": call_x,
+            "band": band_x,
             "mode": mode_x,
             "rst_sent": rst_sent_x,
             "rst_rcvd": rst_rcvd_x,

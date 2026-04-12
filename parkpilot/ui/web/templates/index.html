@@ -131,6 +131,23 @@
     </div>
 
     <div class="row">
+      <label>Band</label>
+      <select name="band" id="band_select">
+        <option value="160M" {% if session_dx.last_band == "160M" %}selected{% endif %}>160M</option>
+        <option value="80M" {% if session_dx.last_band == "80M" %}selected{% endif %}>80M</option>
+        <option value="40M" {% if session_dx.last_band == "40M" %}selected{% endif %}>40M</option>
+        <option value="30M" {% if session_dx.last_band == "30M" %}selected{% endif %}>30M</option>
+        <option value="20M" {% if session_dx.last_band == "20M" %}selected{% endif %}>20M</option>
+        <option value="17M" {% if session_dx.last_band == "17M" %}selected{% endif %}>17M</option>
+        <option value="15M" {% if session_dx.last_band == "15M" %}selected{% endif %}>15M</option>
+        <option value="12M" {% if session_dx.last_band == "12M" %}selected{% endif %}>12M</option>
+        <option value="10M" {% if session_dx.last_band == "10M" %}selected{% endif %}>10M</option>
+        <option value="6M" {% if session_dx.last_band == "6M" %}selected{% endif %}>6M</option>
+      </select>
+    </div>
+    
+
+    <div class="row">
       <label>RST Sent</label>
       <input type="text" name="rst_sent" id="rst_sent" value="599">
     </div>

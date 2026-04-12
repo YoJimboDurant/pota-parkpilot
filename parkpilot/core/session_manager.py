@@ -31,6 +31,7 @@ class SessionDX:
     created_at_local: str
     last_updated_local: str
     last_mode: str = "CW"
+    last_band: str = "20M"
 
 # ============================================================
 # HELPERS
@@ -168,3 +169,15 @@ def set_last_mode(last_mode_x: str) -> Optional[SessionDX]:
     session_dx.last_mode = last_mode_x.upper().strip()
     save_session(session_dx)
     return session_dx
+
+def set_last_band(last_band_x: str) -> Optional[SessionDX]:
+    session_dx = get_current_session()
+
+    if session_dx is None:
+        return None
+
+    session_dx.last_band = last_band_x.upper().strip()
+    save_session(session_dx)
+    return session_dx
+
+
