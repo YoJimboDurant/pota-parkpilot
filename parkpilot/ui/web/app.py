@@ -98,13 +98,31 @@ def create_app() -> Flask:
 
         call_x = request.form.get("call", "").upper().strip()
         mode_x = request.form.get("mode", "CW").upper().strip()
-        set_last_mode(mode_x) 
+        set_last_mode(mode_x)
         rst_sent_x = request.form.get("rst_sent", "599").strip()
         rst_rcvd_x = request.form.get("rst_rcvd", "599").strip()
         notes_x = request.form.get("notes", "").strip()
 
+        operators_in_qso_lx = [
+            op.upper().strip()
+            for op in request.form.getlist("operators_in_qso")
+            if op.strip()
+        ]
+
         if not call_x:
             return redirect(url_for("index"))
+
+        valid_operators_lx = session_dx.operators_present_lx
+        operators_in_qso_lx = [
+            op_x for op_x in valid_operators_lx
+            if op_x in set(operators_in_qso_lx)
+        ]
+
+        if mode_x == "SSB":
+            if not operators_in_qso_lx:
+                operators_in_qso_lx = [session_dx.active_operator]
+        else:
+            operators_in_qso_lx = [session_dx.active_operator]
 
         contacts_path_x = PROJECT_ROOT / "data" / "sessions" / "contacts.json"
 
@@ -119,6 +137,7 @@ def create_app() -> Flask:
             "session_date_local": session_dx.session_date_local,
             "park_id": session_dx.park_id,
             "operator": session_dx.active_operator,
+            "operators_in_qso_lx": operators_in_qso_lx,
             "call": call_x,
             "mode": mode_x,
             "rst_sent": rst_sent_x,

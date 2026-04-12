@@ -145,6 +145,21 @@
       <input type="text" name="notes" placeholder="P2P, S2S, QRP, special note">
     </div>
 
+    <div class="row operators-box" id="operators_in_qso_row" style="display: none;">
+      <label>Operators in QSO</label>
+      {% for op_x in session_dx.operators_present_lx %}
+        <label>
+          <input
+            type="checkbox"
+            name="operators_in_qso"
+            value="{{ op_x }}"
+            {% if op_x == session_dx.active_operator %}checked{% endif %}>
+          {{ op_x }}
+        </label>
+      {% endfor %}
+      <div class="muted">Used for shared SSB contacts.</div>
+    </div>
+
     <button type="submit">Save Contact</button>
   </form>
 </div>
@@ -154,6 +169,7 @@
     const modeSelect = document.getElementById("mode_select");
     const rstSent = document.getElementById("rst_sent");
     const rstRcvd = document.getElementById("rst_rcvd");
+    const operatorsInQsoRow = document.getElementById("operators_in_qso_row");
 
     function defaultReportForMode(mode) {
       if (mode === "SSB") {
@@ -173,10 +189,19 @@
       rstRcvd.value = defaultReport;
     }
 
-    modeSelect.addEventListener("change", updateReportsForMode);
+    function updateOperatorsInQsoVisibility() {
+      const mode = modeSelect.value;
+      operatorsInQsoRow.style.display = (mode === "SSB") ? "block" : "none";
+    }
 
-    // set reports correctly on first page load
+    modeSelect.addEventListener("change", function() {
+      updateReportsForMode();
+      updateOperatorsInQsoVisibility();
+    });
+
+    // set controls correctly on first page load
     updateReportsForMode();
+    updateOperatorsInQsoVisibility();
   })();
 </script>
 {% endif %}
