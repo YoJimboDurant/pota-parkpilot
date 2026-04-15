@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -33,6 +33,7 @@ class SessionDX:
     last_mode: str = "CW"
     last_band: str = "20M"
 
+
 # ============================================================
 # HELPERS
 # ============================================================
@@ -45,13 +46,13 @@ def _now_local_str() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _today_local_str() -> str:
-    return datetime.now().strftime("%Y-%m-%d")
+def _today_utc_str() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
-def _make_session_id(session_date_local_x: str, park_id_x: str) -> str:
+def _make_session_id(session_date_utc_x: str, park_id_x: str) -> str:
     park_clean_x = park_id_x.upper().strip()
-    return f"{session_date_local_x}_{park_clean_x}"
+    return f"{session_date_utc_x}_{park_clean_x}"
 
 
 def _normalize_operator_list(operators_lx: list[str]) -> list[str]:
@@ -95,7 +96,7 @@ def start_or_resume_session(
     park_id_x = _normalize_park_id(park_id_x)
     operators_present_lx = _normalize_operator_list(operators_present_lx)
     active_operator_x = active_operator_x.upper().strip()
-    today_local_x = _today_local_str()
+    today_utc_x = _today_utc_str()
 
     if not park_id_x:
         raise ValueError("park_id is required")
@@ -109,7 +110,7 @@ def start_or_resume_session(
     existing_dx = get_current_session()
 
     if existing_dx:
-        same_day_x = existing_dx.session_date_local == today_local_x
+        same_day_x = existing_dx.session_date_local == today_utc_x
         same_park_x = existing_dx.park_id == park_id_x
 
         if existing_dx.status == "active" and same_day_x and same_park_x:
@@ -119,17 +120,20 @@ def start_or_resume_session(
             return existing_dx, "resumed"
 
     created_at_local_x = _now_local_str()
+
     session_dx = SessionDX(
-        session_id=_make_session_id(today_local_x, park_id_x),
-        session_date_local=today_local_x,
+        session_id=_make_session_id(today_utc_x, park_id_x),
+        session_date_local=today_utc_x,
         park_id=park_id_x,
         operators_present_lx=operators_present_lx,
         active_operator=active_operator_x,
         status="active",
         created_at_local=created_at_local_x,
         last_updated_local=created_at_local_x,
-        last_mode="CW",  
+        last_mode="CW",
+        last_band="20M",
     )
+
     save_session(session_dx)
     return session_dx, "created"
 
@@ -160,6 +164,7 @@ def close_current_session() -> Optional[SessionDX]:
     save_session(session_dx)
     return session_dx
 
+
 def set_last_mode(last_mode_x: str) -> Optional[SessionDX]:
     session_dx = get_current_session()
 
@@ -170,6 +175,7 @@ def set_last_mode(last_mode_x: str) -> Optional[SessionDX]:
     save_session(session_dx)
     return session_dx
 
+
 def set_last_band(last_band_x: str) -> Optional[SessionDX]:
     session_dx = get_current_session()
 
@@ -179,5 +185,3 @@ def set_last_band(last_band_x: str) -> Optional[SessionDX]:
     session_dx.last_band = last_band_x.upper().strip()
     save_session(session_dx)
     return session_dx
-
-

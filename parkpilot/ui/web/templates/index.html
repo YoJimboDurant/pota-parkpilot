@@ -6,256 +6,499 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 1rem;
-      max-width: 800px;
+    :root {
+      --border: #d0d7de;
+      --bg-card: #ffffff;
+      --bg-soft: #f6f8fa;
+      --text: #1f2328;
+      --muted: #667085;
+      --primary: #0d6efd;
+      --primary-hover: #0b5ed7;
+      --danger: #b42318;
+      --warning-bg: #fff4e5;
+      --warning-border: #f5c17c;
+      --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+      --radius: 10px;
+      --gap: 1rem;
     }
 
-    .card {
-      border: 1px solid #ccc;
-      border-radius: 8px;
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: var(--bg-soft);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
       padding: 1rem;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    h1 {
       margin-bottom: 1rem;
     }
 
-    .row {
+    h2 {
+      font-size: 1.25rem;
       margin-bottom: 0.75rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .stack > * + * {
+      margin-top: 1rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .row {
+      margin-bottom: 0.85rem;
+    }
+
+    .session-meta {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.4rem 0.75rem;
+      align-items: start;
+    }
+
+    .session-meta .label {
+      font-weight: bold;
     }
 
     label {
       display: block;
       font-weight: bold;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.3rem;
     }
 
-    input[type="text"], select {
+    input[type="text"],
+    select {
       width: 100%;
-      max-width: 420px;
-      padding: 0.5rem;
+      padding: 0.6rem 0.7rem;
       font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .operators-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      margin-top: 0.25rem;
     }
 
     .operators-box label {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       font-weight: normal;
-      margin-right: 1rem;
+      margin: 0;
     }
 
-    button {
-      padding: 0.6rem 1rem;
-      font-size: 1rem;
-      margin-right: 0.5rem;
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
       margin-top: 0.5rem;
     }
 
+    button,
+    .button-link {
+      display: inline-block;
+      text-decoration: none;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 0.95rem;
+      font-size: 0.98rem;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+    }
+
+    button:hover,
+    .button-link:hover {
+      background: var(--primary-hover);
+    }
+
+    .button-link.secondary {
+      background: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .button-link.secondary:hover {
+      background: #eef4ff;
+    }
+
+    .button-danger {
+      background: var(--danger);
+    }
+
+    .button-danger:hover {
+      filter: brightness(0.95);
+    }
+
     .status {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
     }
 
     .muted {
-      color: #666;
+      color: var(--muted);
+      font-size: 0.92rem;
     }
 
-    code {
-      background: #f4f4f4;
-      padding: 0.1rem 0.3rem;
+    .flash {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-list,
+    .mini-list {
+      margin: 0.4rem 0 0 1.2rem;
+      padding: 0;
+    }
+
+    .summary-block + .summary-block {
+      margin-top: 0.85rem;
+    }
+
+    .export-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .empty {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
+  <div class="page">
+    <h1>POTA ParkPilot</h1>
 
-  <h1>POTA ParkPilot</h1>
-
-  <!-- ========================= -->
-  <!-- Current Session -->
-  <!-- ========================= -->
-  <div class="card">
-    <h2>Current Session</h2>
-
-    {% if session_dx %}
-      <div class="status"><strong>Status:</strong> {{ session_dx.status }}</div>
-      <div class="row"><strong>Session ID:</strong> {{ session_dx.session_id }}</div>
-      <div class="row"><strong>Date:</strong> {{ session_dx.session_date_local }}</div>
-      <div class="row"><strong>Park:</strong> {{ session_dx.park_id }}</div>
-      <div class="row"><strong>Operators Present:</strong> {{ ", ".join(session_dx.operators_present_lx) }}</div>
-      <div class="row"><strong>Active Operator:</strong> {{ session_dx.active_operator }}</div>
-
-      <form method="post" action="{{ url_for('session_set_active_operator') }}">
-        <div class="row">
-          <label for="active_operator">Switch Active Operator</label>
-          <select name="active_operator">
-            {% for op_x in session_dx.operators_present_lx %}
-              <option value="{{ op_x }}" {% if op_x == session_dx.active_operator %}selected{% endif %}>
-                {{ op_x }}
-              </option>
-            {% endfor %}
-          </select>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for msg in messages %}
+            <div>{{ msg }}</div>
+          {% endfor %}
         </div>
-        <button type="submit">Set Active Operator</button>
-      </form>
+      {% endif %}
+    {% endwith %}
 
-      <form method="post" action="{{ url_for('session_close') }}">
-        <button type="submit">Close Session</button>
-      </form>
+    <div class="layout">
+      <div class="stack">
+        <div class="card">
+          <h2>Current Session</h2>
 
-    {% else %}
-      <p>No active session.</p>
-    {% endif %}
+          {% if session_dx %}
+            <div class="status"><strong>Status:</strong> {{ session_dx.status }}</div>
+
+            <div class="session-meta">
+              <div class="label">Session ID:</div>
+              <div>{{ session_dx.session_id }}</div>
+
+              <div class="label">Date:</div>
+              <div>{{ session_dx.session_date_local }}</div>
+
+              <div class="label">Park:</div>
+              <div>{{ session_dx.park_id }}</div>
+
+              <div class="label">Operators Present:</div>
+              <div>{{ ", ".join(session_dx.operators_present_lx) }}</div>
+
+              <div class="label">Active Operator:</div>
+              <div>{{ session_dx.active_operator }}</div>
+            </div>
+
+            <form method="post" action="{{ url_for('session_set_active_operator') }}">
+              <div class="row" style="margin-top: 1rem;">
+                <label for="active_operator">Switch Active Operator</label>
+                <select name="active_operator" id="active_operator">
+                  {% for op_x in session_dx.operators_present_lx %}
+                    <option value="{{ op_x }}" {% if op_x == session_dx.active_operator %}selected{% endif %}>
+                      {{ op_x }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="button-row">
+                <button type="submit">Set Active Operator</button>
+              </div>
+            </form>
+
+            <form method="post" action="{{ url_for('session_close') }}">
+              <div class="button-row">
+                <button type="submit" class="button-danger">Close Session</button>
+              </div>
+            </form>
+          {% else %}
+            <p class="empty">No active session.</p>
+          {% endif %}
+        </div>
+
+        {% if session_dx and session_dx.status == "active" %}
+        <div class="card">
+          <h2>Add Contact</h2>
+
+          <form method="post" action="{{ url_for('add_manual_contact') }}">
+            <div class="row">
+              <label for="call">Callsign</label>
+              <input type="text" name="call" id="call" placeholder="K1ABC" required>
+            </div>
+
+            <div class="row">
+              <label for="mode_select">Mode</label>
+              <select name="mode" id="mode_select">
+                <option value="CW" {% if session_dx.last_mode == "CW" %}selected{% endif %}>CW</option>
+                <option value="SSB" {% if session_dx.last_mode == "SSB" %}selected{% endif %}>SSB</option>
+                <option value="SSTV" {% if session_dx.last_mode == "SSTV" %}selected{% endif %}>SSTV</option>
+                <option value="DIGITAL" {% if session_dx.last_mode == "DIGITAL" %}selected{% endif %}>DIGITAL</option>
+                <option value="OTHER" {% if session_dx.last_mode == "OTHER" %}selected{% endif %}>OTHER</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label for="band_select">Band</label>
+              <select name="band" id="band_select">
+                <option value="160M" {% if session_dx.last_band == "160M" %}selected{% endif %}>160M</option>
+                <option value="80M" {% if session_dx.last_band == "80M" %}selected{% endif %}>80M</option>
+                <option value="40M" {% if session_dx.last_band == "40M" %}selected{% endif %}>40M</option>
+                <option value="30M" {% if session_dx.last_band == "30M" %}selected{% endif %}>30M</option>
+                <option value="20M" {% if session_dx.last_band == "20M" %}selected{% endif %}>20M</option>
+                <option value="17M" {% if session_dx.last_band == "17M" %}selected{% endif %}>17M</option>
+                <option value="15M" {% if session_dx.last_band == "15M" %}selected{% endif %}>15M</option>
+                <option value="12M" {% if session_dx.last_band == "12M" %}selected{% endif %}>12M</option>
+                <option value="10M" {% if session_dx.last_band == "10M" %}selected{% endif %}>10M</option>
+                <option value="6M" {% if session_dx.last_band == "6M" %}selected{% endif %}>6M</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label for="rst_sent">RST Sent</label>
+              <input type="text" name="rst_sent" id="rst_sent" value="599">
+            </div>
+
+            <div class="row">
+              <label for="rst_rcvd">RST Received</label>
+              <input type="text" name="rst_rcvd" id="rst_rcvd" value="599">
+            </div>
+
+            <div class="row">
+              <label for="notes">Notes</label>
+              <input type="text" name="notes" id="notes" placeholder="P2P, S2S, QRP, special note">
+            </div>
+
+            <div class="row" id="operators_in_qso_row" style="display: none;">
+              <label>Operators in QSO</label>
+              <div class="operators-box">
+                {% for op_x in session_dx.operators_present_lx %}
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="operators_in_qso"
+                      value="{{ op_x }}"
+                      {% if op_x == session_dx.active_operator %}checked{% endif %}>
+                    {{ op_x }}
+                  </label>
+                {% endfor %}
+              </div>
+              <div class="muted">Used for shared SSB contacts.</div>
+            </div>
+
+            <div class="button-row">
+              <button type="submit">Save Contact</button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+
+        <div class="card">
+          <h2>Start or Resume Session</h2>
+
+          <form method="post" action="{{ url_for('session_start') }}">
+            <div class="row">
+              <label for="park_id">Park ID</label>
+              <input type="text" name="park_id" id="park_id" placeholder="US-0000" required>
+            </div>
+
+            <div class="row">
+              <label>Operators Present</label>
+              <div class="operators-box">
+                {% for op_x in cfg_dx["operators"] %}
+                  <label>
+                    <input type="checkbox" name="operators_present" value="{{ op_x }}" checked>
+                    {{ op_x }}
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="row">
+              <label for="start_active_operator">Active Operator</label>
+              <select name="active_operator" id="start_active_operator">
+                {% for op_x in cfg_dx["operators"] %}
+                  <option value="{{ op_x }}">{{ op_x }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="button-row">
+              <button type="submit">Start / Resume Session</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="stack">
+        {% if session_dx %}
+        <div class="card">
+          <h2>Session Summary</h2>
+
+          <div class="summary-block">
+            <strong>Total QSOs:</strong> {{ summary_dx.total_qsos }}
+          </div>
+
+          <div class="summary-block">
+            <h3>By Operator</h3>
+            {% if summary_dx.by_operator_dx %}
+              <ul class="summary-list">
+                {% for operator_x, count_x in summary_dx.by_operator_dx.items() %}
+                  <li>{{ operator_x }}: {{ count_x }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty">No QSOs yet.</p>
+            {% endif %}
+          </div>
+
+          <div class="summary-block">
+            <h3>By Mode</h3>
+            {% if summary_dx.by_mode_dx %}
+              <ul class="summary-list">
+                {% for mode_x, count_x in summary_dx.by_mode_dx.items() %}
+                  <li>{{ mode_x }}: {{ count_x }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty">No QSOs yet.</p>
+            {% endif %}
+          </div>
+
+          <div class="summary-block">
+            <h3>By Operator and Mode</h3>
+            {% if summary_dx.by_operator_mode_dx %}
+              {% for operator_x, modes_dx in summary_dx.by_operator_mode_dx.items() %}
+                <div class="summary-block">
+                  <strong>{{ operator_x }}</strong>
+                  <ul class="mini-list">
+                    {% for mode_x, count_x in modes_dx.items() %}
+                      <li>{{ mode_x }}: {{ count_x }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="empty">No QSOs yet.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if exportable_operators_lx %}
+        <div class="card">
+          <h2>Export Logs</h2>
+          <div class="export-list">
+            {% for operator_x in exportable_operators_lx %}
+              <a
+                href="{{ url_for('export_current_adif_operator', operator_x=operator_x) }}"
+                class="button-link secondary"
+              >
+                Export {{ operator_x }} ADIF
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
-  <!-- ========================= -->
-  <!-- Logging -->
-  <!-- ========================= -->
-{% if session_dx and session_dx.status == "active" %}
-<div class="card">
-  <h2>Add Contact</h2>
+  {% if session_dx and session_dx.status == "active" %}
+  <script>
+    (function() {
+      const modeSelect = document.getElementById("mode_select");
+      const rstSent = document.getElementById("rst_sent");
+      const rstRcvd = document.getElementById("rst_rcvd");
+      const operatorsInQsoRow = document.getElementById("operators_in_qso_row");
 
-  <form method="post" action="{{ url_for('add_manual_contact') }}">
-    <div class="row">
-      <label>Callsign</label>
-      <input type="text" name="call" placeholder="K1ABC" required>
-    </div>
-
-    <div class="row">
-      <label>Mode</label>
-      <select name="mode" id="mode_select">
-        <option value="CW" {% if session_dx.last_mode == "CW" %}selected{% endif %}>CW</option>
-        <option value="SSB" {% if session_dx.last_mode == "SSB" %}selected{% endif %}>SSB</option>
-        <option value="SSTV" {% if session_dx.last_mode == "SSTV" %}selected{% endif %}>SSTV</option>
-        <option value="DIGITAL" {% if session_dx.last_mode == "DIGITAL" %}selected{% endif %}>DIGITAL</option>
-        <option value="OTHER" {% if session_dx.last_mode == "OTHER" %}selected{% endif %}>OTHER</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <label>Band</label>
-      <select name="band" id="band_select">
-        <option value="160M" {% if session_dx.last_band == "160M" %}selected{% endif %}>160M</option>
-        <option value="80M" {% if session_dx.last_band == "80M" %}selected{% endif %}>80M</option>
-        <option value="40M" {% if session_dx.last_band == "40M" %}selected{% endif %}>40M</option>
-        <option value="30M" {% if session_dx.last_band == "30M" %}selected{% endif %}>30M</option>
-        <option value="20M" {% if session_dx.last_band == "20M" %}selected{% endif %}>20M</option>
-        <option value="17M" {% if session_dx.last_band == "17M" %}selected{% endif %}>17M</option>
-        <option value="15M" {% if session_dx.last_band == "15M" %}selected{% endif %}>15M</option>
-        <option value="12M" {% if session_dx.last_band == "12M" %}selected{% endif %}>12M</option>
-        <option value="10M" {% if session_dx.last_band == "10M" %}selected{% endif %}>10M</option>
-        <option value="6M" {% if session_dx.last_band == "6M" %}selected{% endif %}>6M</option>
-      </select>
-    </div>
-    
-
-    <div class="row">
-      <label>RST Sent</label>
-      <input type="text" name="rst_sent" id="rst_sent" value="599">
-    </div>
-
-    <div class="row">
-      <label>RST Received</label>
-      <input type="text" name="rst_rcvd" id="rst_rcvd" value="599">
-    </div>
-
-    <div class="row">
-      <label>Notes</label>
-      <input type="text" name="notes" placeholder="P2P, S2S, QRP, special note">
-    </div>
-
-    <div class="row operators-box" id="operators_in_qso_row" style="display: none;">
-      <label>Operators in QSO</label>
-      {% for op_x in session_dx.operators_present_lx %}
-        <label>
-          <input
-            type="checkbox"
-            name="operators_in_qso"
-            value="{{ op_x }}"
-            {% if op_x == session_dx.active_operator %}checked{% endif %}>
-          {{ op_x }}
-        </label>
-      {% endfor %}
-      <div class="muted">Used for shared SSB contacts.</div>
-    </div>
-
-    <button type="submit">Save Contact</button>
-  </form>
-</div>
-
-<script>
-  (function() {
-    const modeSelect = document.getElementById("mode_select");
-    const rstSent = document.getElementById("rst_sent");
-    const rstRcvd = document.getElementById("rst_rcvd");
-    const operatorsInQsoRow = document.getElementById("operators_in_qso_row");
-
-    function defaultReportForMode(mode) {
-      if (mode === "SSB") {
-        return "59";
+      function defaultReportForMode(mode) {
+        if (mode === "SSB") return "59";
+        if (mode === "SSTV") return "595";
+        return "599";
       }
-      if (mode === "SSTV") {
-        return "595";
+
+      function updateReportsForMode() {
+        const mode = modeSelect.value;
+        const defaultReport = defaultReportForMode(mode);
+        rstSent.value = defaultReport;
+        rstRcvd.value = defaultReport;
       }
-      return "599";
-    }
 
-    function updateReportsForMode() {
-      const mode = modeSelect.value;
-      const defaultReport = defaultReportForMode(mode);
+      function updateOperatorsInQsoVisibility() {
+        const mode = modeSelect.value;
+        operatorsInQsoRow.style.display = (mode === "SSB") ? "block" : "none";
+      }
 
-      rstSent.value = defaultReport;
-      rstRcvd.value = defaultReport;
-    }
+      modeSelect.addEventListener("change", function() {
+        updateReportsForMode();
+        updateOperatorsInQsoVisibility();
+      });
 
-    function updateOperatorsInQsoVisibility() {
-      const mode = modeSelect.value;
-      operatorsInQsoRow.style.display = (mode === "SSB") ? "block" : "none";
-    }
-
-    modeSelect.addEventListener("change", function() {
       updateReportsForMode();
       updateOperatorsInQsoVisibility();
-    });
-
-    // set controls correctly on first page load
-    updateReportsForMode();
-    updateOperatorsInQsoVisibility();
-  })();
-</script>
-{% endif %}
-  <!-- ========================= -->
-  <!-- Start / Resume Session -->
-  <!-- ========================= -->
-  <div class="card">
-    <h2>Start or Resume Session</h2>
-
-    <form method="post" action="{{ url_for('session_start') }}">
-      <div class="row">
-        <label>Park ID</label>
-        <input type="text" name="park_id" placeholder="US-0000" required>
-      </div>
-
-      <div class="row operators-box">
-        <label>Operators Present</label>
-        {% for op_x in cfg_dx["operators"] %}
-          <label>
-            <input type="checkbox" name="operators_present" value="{{ op_x }}" checked>
-            {{ op_x }}
-          </label>
-        {% endfor %}
-      </div>
-
-      <div class="row">
-        <label>Active Operator</label>
-        <select name="active_operator">
-          {% for op_x in cfg_dx["operators"] %}
-            <option value="{{ op_x }}">{{ op_x }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <button type="submit">Start / Resume Session</button>
-    </form>
-  </div>
-
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>

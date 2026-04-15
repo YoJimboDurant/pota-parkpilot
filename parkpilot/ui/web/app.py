@@ -4,7 +4,16 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, send_file, flash
+from collections import Counter
+
+from parkpilot.utils.adif import (
+    export_all_adif_for_session,
+    export_adif_for_session,
+    get_session_operators,
+)
+
+from parkpilot.core.session_manager import get_current_session
 
 from parkpilot.core.session_manager import (
     close_current_session,
@@ -38,6 +47,72 @@ def load_config() -> dict:
 
 
 # ============================================================
+# COUNTER FOR QSOs
+# ============================================================
+
+
+def build_session_summary_dx(session_id_x: str) -> dict:
+    contacts_path_x = PROJECT_ROOT / "data" / "sessions" / "contacts.json"
+
+    if not contacts_path_x.exists():
+        return {
+            "total_qsos": 0,
+            "by_operator_dx": {},
+            "by_mode_dx": {},
+            "by_operator_mode_dx": {},
+        }
+
+    with open(contacts_path_x, "r", encoding="utf-8") as fx:
+        raw_x = fx.read().strip()
+
+    contacts_lx = json.loads(raw_x) if raw_x else []
+
+    session_contacts_lx = [
+        contact_dx
+        for contact_dx in contacts_lx
+        if contact_dx.get("session_id") == session_id_x
+    ]
+
+    total_qsos_x = len(session_contacts_lx)
+    by_operator_cx = Counter()
+    by_mode_cx = Counter()
+    by_operator_mode_dx: dict[str, Counter] = {}
+
+    for contact_dx in session_contacts_lx:
+        mode_x = str(contact_dx.get("mode", "")).upper().strip()
+        by_mode_cx[mode_x] += 1
+
+        operators_in_qso_lx = contact_dx.get("operators_in_qso_lx", [])
+        if not operators_in_qso_lx:
+            operator_x = str(contact_dx.get("operator", "")).upper().strip()
+            if operator_x:
+                operators_in_qso_lx = [operator_x]
+
+        for operator_x in operators_in_qso_lx:
+            operator_clean_x = str(operator_x).upper().strip()
+            if not operator_clean_x:
+                continue
+
+            by_operator_cx[operator_clean_x] += 1
+
+            if operator_clean_x not in by_operator_mode_dx:
+                by_operator_mode_dx[operator_clean_x] = Counter()
+
+            by_operator_mode_dx[operator_clean_x][mode_x] += 1
+
+    return {
+        "total_qsos": total_qsos_x,
+        "by_operator_dx": dict(sorted(by_operator_cx.items())),
+        "by_mode_dx": dict(sorted(by_mode_cx.items())),
+        "by_operator_mode_dx": {
+            operator_x: dict(sorted(counter_x.items()))
+            for operator_x, counter_x in sorted(by_operator_mode_dx.items())
+        },
+    }
+
+
+
+# ============================================================
 # APP FACTORY
 # ============================================================
 
@@ -48,16 +123,34 @@ def create_app() -> Flask:
     )
     app.config["SECRET_KEY"] = "parkpilot-dev-key"
 
+
+    
     @app.route("/", methods=["GET"])
     def index():
         cfg_dx = load_config()
         session_dx = get_current_session()
 
+        exportable_operators_lx = []
+        summary_dx = {
+            "total_qsos": 0,
+            "by_operator_dx": {},
+            "by_mode_dx": {},
+            "by_operator_mode_dx": {},
+        }
+
+        if session_dx is not None:
+            exportable_operators_lx = get_session_operators(session_dx.session_id)
+            summary_dx = build_session_summary_dx(session_dx.session_id)
+
         return render_template(
             "index.html",
             cfg_dx=cfg_dx,
             session_dx=session_dx,
+            exportable_operators_lx=exportable_operators_lx,
+            summary_dx=summary_dx,
         )
+    
+
 
     @app.route("/session/start", methods=["POST"])
     def session_start():
@@ -158,5 +251,32 @@ def create_app() -> Flask:
             json.dump(contacts_lx, fx, indent=2)
 
         return redirect(url_for("index"))
+    
+    @app.route("/export/adif/current/all")
+    def export_current_adif_all():
+        session_dx = get_current_session()
+        paths_lx = export_all_adif_for_session(session_dx.session_id)
+
+        # For now just return first file (we’ll zip later)
+        return send_file(paths_lx[0], as_attachment=True)
+    
+    @app.route("/export/adif/current/<operator_x>")
+    def export_current_adif_operator(operator_x: str):
+        session_dx = get_current_session()
+
+        if session_dx is None:
+            return redirect(url_for("index"))
+
+        try:
+            export_path_x = export_adif_for_session(
+                session_id_x=session_dx.session_id,
+                operator_x=operator_x,
+            )
+        except ValueError:
+            flash(f"No contacts to export for {operator_x}.")
+            return redirect(url_for("index"))
+
+        return send_file(export_path_x, as_attachment=True)
+    
 
     return app
