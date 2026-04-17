@@ -1,12 +1,19 @@
 {
-  "adif_file": "/home/pi/.local/share/WSJT-X/wsjtx_log.adi",
-  "operators": ["KE4MKG", "KS4GY"],
-  "activation_target": 10,
-  "poll_seconds": 2,
-  "window_title": "POTA ParkPilot",
-  "count_unique_calls": true,
-  "exports_dir": "data/exports",
+  "adif_file": "C:\\Users\\james\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
+
+  "adif_file_candidates": [
+    "C:\\Users\\james\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
+    "C:\\Users\\Jim\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
+    "/home/pi/.local/share/WSJT-X/wsjtx_log.adi"
+  ],
+
+  "operators": [
+    "KS4GY",
+    "KE4MKG"
+  ],
+
+  "operator_field": "OPERATOR",
   "park_source_field": "COMMENT",
-  "operator_field": "STATION_CALLSIGN",
-  "park_regex": "(K|US)-\\\\d{4,5}"
+  "park_regex": "US-\\d+",
+  "poll_seconds": 2
 }
