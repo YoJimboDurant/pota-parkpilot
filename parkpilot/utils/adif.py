@@ -155,6 +155,53 @@ def _adif_time_x(dt_x: datetime) -> str:
 
 
 # ============================================================
+# DUPLICATE HELPERS
+# ============================================================
+
+def _export_duplicate_key_x(contact_dx: dict[str, Any], operator_x: str) -> tuple[str, str, str, str, str]:
+    timestamp_utc_x = _normalize_str(contact_dx.get("timestamp_utc"))
+    qso_date_x = ""
+
+    if timestamp_utc_x:
+        try:
+            qso_date_x = _adif_date_x(_parse_timestamp_utc(timestamp_utc_x))
+        except ValueError:
+            qso_date_x = ""
+
+    return (
+        _normalize_upper_str(operator_x),
+        _normalize_upper_str(contact_dx.get("band")),
+        _normalize_upper_str(contact_dx.get("park_id")),
+        _normalize_mode(contact_dx.get("mode")),
+        qso_date_x,
+    )
+
+
+def dedupe_contacts_for_export(
+    contacts_lx: list[dict[str, Any]],
+    operator_x: str,
+) -> list[dict[str, Any]]:
+    """
+    De-duplicate contacts for export using the user-requested key:
+    band, park, mode, UTC date, and operator.
+
+    The first matching contact is kept. Later duplicates are ignored.
+    """
+    seen_sx: set[tuple[str, str, str, str, str]] = set()
+    deduped_lx: list[dict[str, Any]] = []
+
+    for contact_dx in contacts_lx:
+        key_x = _export_duplicate_key_x(contact_dx, operator_x)
+        if key_x in seen_sx:
+            continue
+
+        seen_sx.add(key_x)
+        deduped_lx.append(contact_dx)
+
+    return deduped_lx
+
+
+# ============================================================
 # ADIF HELPERS
 # ============================================================
 
@@ -337,7 +384,8 @@ def export_adif_for_session(
     """
     Export one ADIF file for one operator in a session.
 
-    Includes every contact where operator_x appears in operators_in_qso_lx.
+    Includes every contact where operator_x appears in operators_in_qso_lx,
+    then removes duplicates based on operator + band + park + mode + UTC date.
     """
     _ensure_exports_dir()
 
@@ -347,6 +395,10 @@ def export_adif_for_session(
 
     contacts_lx = get_contacts_for_session(
         session_id_x=session_id_x,
+        operator_x=operator_clean_x,
+    )
+    contacts_lx = dedupe_contacts_for_export(
+        contacts_lx=contacts_lx,
         operator_x=operator_clean_x,
     )
 
