@@ -47,9 +47,29 @@ def load_config() -> dict:
 
 
 # ============================================================
-# COUNTER FOR QSOs
+# DUPLICATE CHECKS
 # ============================================================
 
+def build_contact_dup_key_x(contact_dx: dict) -> tuple[str, str, str, str, str]:
+    timestamp_x = str(contact_dx.get("timestamp_utc", "")).strip()
+    utc_date_x = timestamp_x[:10] if len(timestamp_x) >= 10 else ""
+
+    park_x = str(
+        contact_dx.get("park_id", contact_dx.get("park", ""))
+    ).upper().strip()
+
+    return (
+        str(contact_dx.get("operator", "")).upper().strip(),
+        str(contact_dx.get("band", "")).upper().strip(),
+        park_x,
+        str(contact_dx.get("mode", "")).upper().strip(),
+        utc_date_x,
+    )
+
+
+# ============================================================
+# COUNTER FOR QSOs
+# ============================================================
 
 def build_session_summary_dx(session_id_x: str) -> dict:
     contacts_path_x = PROJECT_ROOT / "data" / "sessions" / "contacts.json"
@@ -109,6 +129,7 @@ def build_session_summary_dx(session_id_x: str) -> dict:
             for operator_x, counter_x in sorted(by_operator_mode_dx.items())
         },
     }
+
 
 def load_all_contacts_lx() -> list[dict]:
     contacts_path_x = PROJECT_ROOT / "data" / "sessions" / "contacts.json"
@@ -171,6 +192,7 @@ def build_session_status_dx() -> dict:
         "status_token": status_token_x,
     }
 
+
 # ============================================================
 # APP FACTORY
 # ============================================================
@@ -182,8 +204,6 @@ def create_app() -> Flask:
     )
     app.config["SECRET_KEY"] = "parkpilot-dev-key"
 
-
-    
     @app.route("/", methods=["GET"])
     def index():
         cfg_dx = load_config()
@@ -200,7 +220,7 @@ def create_app() -> Flask:
         if session_dx is not None:
             exportable_operators_lx = get_session_operators(session_dx.session_id)
             summary_dx = build_session_summary_dx(session_dx.session_id)
-            
+
         status_dx = build_session_status_dx()
 
         return render_template(
@@ -211,8 +231,6 @@ def create_app() -> Flask:
             summary_dx=summary_dx,
             status_dx=status_dx,
         )
-    
-
 
     @app.route("/session/start", methods=["POST"])
     def session_start():
@@ -307,13 +325,20 @@ def create_app() -> Flask:
             "timestamp_utc": datetime.utcnow().isoformat() + "Z",
         }
 
+        new_dup_key_x = build_contact_dup_key_x(contact_dx)
+        existing_dup_keys_x = {build_contact_dup_key_x(existing_dx) for existing_dx in contacts_lx}
+
+        if new_dup_key_x in existing_dup_keys_x:
+            flash("Duplicate contact ignored.", "warning")
+            return redirect(url_for("index"))
+
         contacts_lx.append(contact_dx)
 
         with open(contacts_path_x, "w", encoding="utf-8") as fx:
             json.dump(contacts_lx, fx, indent=2)
 
         return redirect(url_for("index"))
-    
+
     @app.route("/export/adif/current/all")
     def export_current_adif_all():
         session_dx = get_current_session()
@@ -321,7 +346,7 @@ def create_app() -> Flask:
 
         # For now just return first file (we’ll zip later)
         return send_file(paths_lx[0], as_attachment=True)
-    
+
     @app.route("/export/adif/current/<operator_x>")
     def export_current_adif_operator(operator_x: str):
         session_dx = get_current_session()
@@ -339,10 +364,9 @@ def create_app() -> Flask:
             return redirect(url_for("index"))
 
         return send_file(export_path_x, as_attachment=True)
-    
+
     @app.route("/api/session_status", methods=["GET"])
     def api_session_status():
         return jsonify(build_session_status_dx())
-    
 
     return app
