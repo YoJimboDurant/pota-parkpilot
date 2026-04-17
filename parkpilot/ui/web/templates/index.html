@@ -215,6 +215,9 @@
 <body>
   <div class="page">
     <h1>POTA ParkPilot</h1>
+    <div class="muted" id="live_status_line" style="margin-bottom: 1rem;">
+      Live updates enabled.
+    </div>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -464,41 +467,154 @@
     </div>
   </div>
 
-  {% if session_dx and session_dx.status == "active" %}
-  <script>
-    (function() {
-      const modeSelect = document.getElementById("mode_select");
-      const rstSent = document.getElementById("rst_sent");
-      const rstRcvd = document.getElementById("rst_rcvd");
-      const operatorsInQsoRow = document.getElementById("operators_in_qso_row");
+{% if session_dx and session_dx.status == "active" %}
+<script>
+  (function() {
+    const modeSelect = document.getElementById("mode_select");
+    const rstSent = document.getElementById("rst_sent");
+    const rstRcvd = document.getElementById("rst_rcvd");
+    const operatorsInQsoRow = document.getElementById("operators_in_qso_row");
+    const liveStatusLine = document.getElementById("live_status_line");
 
-      function defaultReportForMode(mode) {
-        if (mode === "SSB") return "59";
-        if (mode === "SSTV") return "595";
-        return "599";
+    let lastStatusToken = "{{ status_dx.status_token }}";
+
+    function defaultReportForMode(mode) {
+      if (mode === "SSB") return "59";
+      if (mode === "SSTV") return "595";
+      return "599";
+    }
+
+    function updateReportsForMode() {
+      const mode = modeSelect.value;
+      const defaultReport = defaultReportForMode(mode);
+      rstSent.value = defaultReport;
+      rstRcvd.value = defaultReport;
+    }
+
+    function updateOperatorsInQsoVisibility() {
+      const mode = modeSelect.value;
+      operatorsInQsoRow.style.display = (mode === "SSB") ? "block" : "none";
+    }
+
+    function userIsEditing() {
+      const active = document.activeElement;
+      if (!active) return false;
+      const tag = (active.tagName || "").toUpperCase();
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+    }
+
+    async function checkForUpdates() {
+      try {
+        const response = await fetch("/api/session_status", {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        if (!response.ok) {
+          if (liveStatusLine) {
+            liveStatusLine.textContent = "Live updates: status check failed.";
+          }
+          return;
+        }
+
+        const data = await response.json();
+
+        if (liveStatusLine) {
+          liveStatusLine.textContent =
+            `Live updates enabled. QSOs: ${data.total_qsos}. Active operator: ${data.active_operator || "-"}`;
+        }
+
+        if (data.status_token !== lastStatusToken) {
+          if (!data.has_active_session) {
+            window.location.reload();
+            return;
+          }
+
+          if (userIsEditing()) {
+            if (liveStatusLine) {
+              liveStatusLine.textContent =
+                "New data detected. Finish editing and refresh to load updates.";
+            }
+            lastStatusToken = data.status_token;
+            return;
+          }
+
+          window.location.reload();
+          return;
+        }
+      } catch (err) {
+        if (liveStatusLine) {
+          liveStatusLine.textContent = "Live updates: unable to reach server.";
+        }
       }
+    }
 
-      function updateReportsForMode() {
-        const mode = modeSelect.value;
-        const defaultReport = defaultReportForMode(mode);
-        rstSent.value = defaultReport;
-        rstRcvd.value = defaultReport;
-      }
-
-      function updateOperatorsInQsoVisibility() {
-        const mode = modeSelect.value;
-        operatorsInQsoRow.style.display = (mode === "SSB") ? "block" : "none";
-      }
-
-      modeSelect.addEventListener("change", function() {
-        updateReportsForMode();
-        updateOperatorsInQsoVisibility();
-      });
-
+    modeSelect.addEventListener("change", function() {
       updateReportsForMode();
       updateOperatorsInQsoVisibility();
-    })();
-  </script>
-  {% endif %}
+    });
+
+    updateReportsForMode();
+    updateOperatorsInQsoVisibility();
+
+    setInterval(checkForUpdates, 2000);
+  })();
+</script>
+{% else %}
+<script>
+  (function() {
+    const liveStatusLine = document.getElementById("live_status_line");
+    let lastStatusToken = "{{ status_dx.status_token }}";
+
+    async function checkForUpdates() {
+      try {
+        const response = await fetch("/api/session_status", {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        if (!response.ok) {
+          if (liveStatusLine) {
+            liveStatusLine.textContent = "Live updates: status check failed.";
+          }
+          return;
+        }
+
+        const data = await response.json();
+
+        if (liveStatusLine) {
+          if (data.has_active_session) {
+            liveStatusLine.textContent =
+              `Live updates enabled. Active session: ${data.park_id}. QSOs: ${data.total_qsos}`;
+          } else {
+            liveStatusLine.textContent = "Live updates enabled. No active session.";
+          }
+        }
+
+        if (data.status_token !== lastStatusToken) {
+          if (data.has_active_session) {
+            window.location.reload();
+            return;
+          }
+
+          lastStatusToken = data.status_token;
+        }
+      } catch (err) {
+        if (liveStatusLine) {
+          liveStatusLine.textContent = "Live updates: unable to reach server.";
+        }
+      }
+    }
+
+    setInterval(checkForUpdates, 2000);
+  })();
+</script>
+{% endif %}
 </body>
 </html>

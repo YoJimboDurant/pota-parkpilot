@@ -1,19 +1,15 @@
 {
   "adif_file": "C:\\Users\\james\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
-
   "adif_file_candidates": [
     "C:\\Users\\james\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
-    "C:\\Users\\Jim\\AppData\\Local\\WSJT-X\\wsjtx_log.adi",
     "/home/pi/.local/share/WSJT-X/wsjtx_log.adi"
   ],
-
   "operators": [
     "KS4GY",
     "KE4MKG"
   ],
-
   "operator_field": "OPERATOR",
-  "park_source_field": "COMMENT",
+  "park_source_field": "MY_SIG_INFO",
   "park_regex": "US-\\d+",
   "poll_seconds": 2
 }

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from flask import Flask, redirect, render_template, request, url_for, send_file, flash
+from flask import Flask, redirect, render_template, request, url_for, send_file, flash, jsonify
 from collections import Counter
 
 from parkpilot.utils.adif import (
@@ -110,7 +110,66 @@ def build_session_summary_dx(session_id_x: str) -> dict:
         },
     }
 
+def load_all_contacts_lx() -> list[dict]:
+    contacts_path_x = PROJECT_ROOT / "data" / "sessions" / "contacts.json"
 
+    if not contacts_path_x.exists():
+        return []
+
+    with open(contacts_path_x, "r", encoding="utf-8") as fx:
+        raw_x = fx.read().strip()
+
+    return json.loads(raw_x) if raw_x else []
+
+
+def build_session_status_dx() -> dict:
+    session_dx = get_current_session()
+
+    if session_dx is None:
+        return {
+            "has_active_session": False,
+            "session_id": "",
+            "park_id": "",
+            "active_operator": "",
+            "total_qsos": 0,
+            "last_contact_ts": "",
+            "status_token": "no-session",
+        }
+
+    contacts_lx = load_all_contacts_lx()
+    session_contacts_lx = [
+        contact_dx
+        for contact_dx in contacts_lx
+        if contact_dx.get("session_id") == session_dx.session_id
+    ]
+
+    total_qsos_x = len(session_contacts_lx)
+
+    if session_contacts_lx:
+        last_contact_ts_x = max(
+            str(contact_dx.get("timestamp_utc", "")).strip()
+            for contact_dx in session_contacts_lx
+        )
+    else:
+        last_contact_ts_x = ""
+
+    status_token_x = "|".join([
+        str(session_dx.session_id),
+        str(session_dx.status),
+        str(session_dx.active_operator),
+        str(total_qsos_x),
+        str(last_contact_ts_x),
+    ])
+
+    return {
+        "has_active_session": True,
+        "session_id": session_dx.session_id,
+        "park_id": session_dx.park_id,
+        "active_operator": session_dx.active_operator,
+        "total_qsos": total_qsos_x,
+        "last_contact_ts": last_contact_ts_x,
+        "status_token": status_token_x,
+    }
 
 # ============================================================
 # APP FACTORY
@@ -141,6 +200,8 @@ def create_app() -> Flask:
         if session_dx is not None:
             exportable_operators_lx = get_session_operators(session_dx.session_id)
             summary_dx = build_session_summary_dx(session_dx.session_id)
+            
+        status_dx = build_session_status_dx()
 
         return render_template(
             "index.html",
@@ -148,6 +209,7 @@ def create_app() -> Flask:
             session_dx=session_dx,
             exportable_operators_lx=exportable_operators_lx,
             summary_dx=summary_dx,
+            status_dx=status_dx,
         )
     
 
@@ -277,6 +339,10 @@ def create_app() -> Flask:
             return redirect(url_for("index"))
 
         return send_file(export_path_x, as_attachment=True)
+    
+    @app.route("/api/session_status", methods=["GET"])
+    def api_session_status():
+        return jsonify(build_session_status_dx())
     
 
     return app

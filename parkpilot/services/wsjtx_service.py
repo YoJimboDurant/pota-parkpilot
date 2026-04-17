@@ -178,19 +178,28 @@ def extract_operator_from_record(record_dx: dict[str, str], cfg_dx: dict[str, An
 
 
 def extract_park_from_record(record_dx: dict[str, str], cfg_dx: dict[str, Any]) -> str:
-    source_field_x = cfg_dx["park_source_field"]
-    source_text_x = _normalize_upper_str(record_dx.get(source_field_x))
+    candidate_fields_lx = []
 
-    if not source_text_x:
-        return ""
+    preferred_field_x = str(cfg_dx.get("park_source_field", "")).upper().strip()
+    if preferred_field_x:
+        candidate_fields_lx.append(preferred_field_x)
+
+    for fallback_field_x in ["MY_SIG_INFO", "COMMENT", "NOTES"]:
+        if fallback_field_x not in candidate_fields_lx:
+            candidate_fields_lx.append(fallback_field_x)
 
     pattern_x = str(cfg_dx["park_regex"]).replace("\\\\", "\\")
-    match_x = re.search(pattern_x, source_text_x, flags=re.IGNORECASE)
-    if not match_x:
-        return ""
 
-    return match_x.group(0).upper()
+    for field_x in candidate_fields_lx:
+        source_text_x = _normalize_upper_str(record_dx.get(field_x))
+        if not source_text_x:
+            continue
 
+        match_x = re.search(pattern_x, source_text_x, flags=re.IGNORECASE)
+        if match_x:
+            return match_x.group(0).upper()
+
+    return ""
 
 def extract_timestamp_utc_from_record(record_dx: dict[str, str]) -> str:
     qso_date_x = _normalize_plain_str(record_dx.get("QSO_DATE"))
@@ -282,27 +291,49 @@ def record_to_contact_dx(
     cfg_dx: dict[str, Any],
 ) -> dict[str, Any] | None:
     session_dx = get_current_session()
-    if session_dx is None or session_dx.status != "active":
+
+    if session_dx is None:
+        print("SKIP: no current session")
+        return None
+
+    if session_dx.status != "active":
+        print(f"SKIP: session not active ({session_dx.status})")
         return None
 
     operator_x = extract_operator_from_record(record_dx, cfg_dx)
-    if operator_x not in session_dx.operators_present_lx:
-        return None
-
     park_x = extract_park_from_record(record_dx, cfg_dx)
-    if park_x != session_dx.park_id:
-        return None
-
     call_x = _normalize_upper_str(record_dx.get("CALL"))
     band_x = _normalize_upper_str(record_dx.get("BAND"))
     mode_x = _normalize_upper_str(record_dx.get("SUBMODE") or record_dx.get("MODE"))
+    timestamp_utc_x = extract_timestamp_utc_from_record(record_dx)
+
+    print("---- WSJT-X RECORD CHECK ----")
+    print(f"session park: {session_dx.park_id}")
+    print(f"session operators: {session_dx.operators_present_lx}")
+    print(f"record operator: {operator_x}")
+    print(f"record park: {park_x}")
+    print(f"call: {call_x}")
+    print(f"band: {band_x}")
+    print(f"mode: {mode_x}")
+    print(f"timestamp_utc: {timestamp_utc_x}")
+
+    if operator_x not in session_dx.operators_present_lx:
+        print("SKIP: operator mismatch")
+        return None
+
+    if park_x != session_dx.park_id:
+        print("SKIP: park mismatch")
+        return None
+
     rst_sent_x = _normalize_plain_str(record_dx.get("RST_SENT") or record_dx.get("SRX_STRING"))
     rst_rcvd_x = _normalize_plain_str(record_dx.get("RST_RCVD") or record_dx.get("STX_STRING"))
     notes_x = _normalize_plain_str(record_dx.get("COMMENT"))
-    timestamp_utc_x = extract_timestamp_utc_from_record(record_dx)
 
     if not call_x or not band_x or not mode_x or not timestamp_utc_x:
+        print("SKIP: missing required fields")
         return None
+
+    print("IMPORT: matched")
 
     return {
         "session_id": session_dx.session_id,
@@ -319,7 +350,6 @@ def record_to_contact_dx(
         "timestamp_utc": timestamp_utc_x,
         "source": "WSJT-X",
     }
-
 
 def import_records_lx(records_lx: list[str], cfg_dx: dict[str, Any]) -> int:
     contacts_lx = load_contacts_lx()
