@@ -158,7 +158,7 @@ def _adif_time_x(dt_x: datetime) -> str:
 # DUPLICATE HELPERS
 # ============================================================
 
-def _export_duplicate_key_x(contact_dx: dict[str, Any], operator_x: str) -> tuple[str, str, str, str, str]:
+def _export_duplicate_key_x(contact_dx: dict[str, Any], operator_x: str) -> tuple[str, str, str, str, str, str]:
     timestamp_utc_x = _normalize_str(contact_dx.get("timestamp_utc"))
     qso_date_x = ""
 
@@ -170,6 +170,7 @@ def _export_duplicate_key_x(contact_dx: dict[str, Any], operator_x: str) -> tupl
 
     return (
         _normalize_upper_str(operator_x),
+        _normalize_upper_str(contact_dx.get("call")),
         _normalize_upper_str(contact_dx.get("band")),
         _normalize_upper_str(contact_dx.get("park_id")),
         _normalize_mode(contact_dx.get("mode")),
@@ -182,12 +183,12 @@ def dedupe_contacts_for_export(
     operator_x: str,
 ) -> list[dict[str, Any]]:
     """
-    De-duplicate contacts for export using the user-requested key:
-    band, park, mode, UTC date, and operator.
+    De-duplicate contacts for export using:
+    operator, call, band, park, mode, and UTC date.
 
     The first matching contact is kept. Later duplicates are ignored.
     """
-    seen_sx: set[tuple[str, str, str, str, str]] = set()
+    seen_sx: set[tuple[str, str, str, str, str, str]] = set()
     deduped_lx: list[dict[str, Any]] = []
 
     for contact_dx in contacts_lx:
@@ -385,7 +386,7 @@ def export_adif_for_session(
     Export one ADIF file for one operator in a session.
 
     Includes every contact where operator_x appears in operators_in_qso_lx,
-    then removes duplicates based on operator + band + park + mode + UTC date.
+    then removes duplicates based on operator + call + band + park + mode + UTC date.
     """
     _ensure_exports_dir()
 
