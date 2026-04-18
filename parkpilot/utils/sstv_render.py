@@ -25,12 +25,12 @@ def render_sstv_image_x(
     current_ratio_x = width_x / height_x
 
     if current_ratio_x > target_ratio_x:
-        # too wide → crop sides
+        # too wide -> crop sides
         new_width_x = int(height_x * target_ratio_x)
         left_x = (width_x - new_width_x) // 2
         img_x = img_x.crop((left_x, 0, left_x + new_width_x, height_x))
     else:
-        # too tall → crop top/bottom
+        # too tall -> crop top/bottom
         new_height_x = int(width_x / target_ratio_x)
         top_x = (height_x - new_height_x) // 2
         img_x = img_x.crop((0, top_x, width_x, top_x + new_height_x))
@@ -43,7 +43,7 @@ def render_sstv_image_x(
 
     # ---------- FONTS ----------
     try:
-        font_big_x = ImageFont.truetype("arial.ttf", int(height_x * 0.50))
+        font_big_x = ImageFont.truetype("arial.ttf", int(height_x * 0.15))
         font_med_x = ImageFont.truetype("arial.ttf", int(height_x * 0.07))
         font_small_x = ImageFont.truetype("arial.ttf", int(height_x * 0.05))
     except Exception:
@@ -68,33 +68,50 @@ def render_sstv_image_x(
     if template_clean_x == "cq":
         draw_x.text((10, 5), "CQ SSTV", fill="yellow", font=font_big_x)
 
-        y_x = height_x - bottom_bar_h_x + 5
+        y_x = height_x - bottom_bar_h_x + 2
         draw_x.text((10, y_x), my_call_x, fill="yellow", font=font_big_x)
 
-        time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
-        draw_x.text((width_x - time_w_x - 5, y_x + 10), timestamp_x, fill="yellow", font=font_small_x)
+        call_bbox_x = draw_x.textbbox((10, y_x), my_call_x, font=font_big_x)
+        call_height_x = call_bbox_x[3] - call_bbox_x[1]
+        line2_y_x = y_x + call_height_x + 12
+
+        draw_x.text(
+            (10, line2_y_x),
+            timestamp_x,
+            fill="yellow",
+            font=font_small_x,
+        )
 
         if caption_x:
-            draw_x.text((10, y_x + 35), caption_x, fill="yellow", font=font_small_x)
+            caption_y_x = line2_y_x + int(height_x * 0.08)
+            draw_x.text((10, caption_y_x), caption_x, fill="yellow", font=font_small_x)
 
+    # ---------- CQ POTA ----------
     elif template_clean_x == "cq_pota":
         draw_x.text((10, 5), "CQ SSTV POTA", fill="yellow", font=font_big_x)
 
-        y_x = height_x - bottom_bar_h_x + 5
+        y_x = height_x - bottom_bar_h_x + 2
         draw_x.text((10, y_x), my_call_x, fill="yellow", font=font_big_x)
 
-        park_w_x = draw_x.textlength(park_id_x, font=font_med_x)
-        draw_x.text(((width_x - park_w_x) / 2, y_x + 5), park_id_x, fill="yellow", font=font_med_x)
+        call_bbox_x = draw_x.textbbox((10, y_x), my_call_x, font=font_big_x)
+        call_height_x = call_bbox_x[3] - call_bbox_x[1]
+        line2_y_x = y_x + call_height_x + 12
 
-        time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
-        draw_x.text((width_x - time_w_x - 5, y_x + 10), timestamp_x, fill="yellow", font=font_small_x)
+        line2_text_x = f"{park_id_x} {timestamp_x}"
+        draw_x.text(
+            (10, line2_y_x),
+            line2_text_x,
+            fill="yellow",
+            font=font_small_x,
+        )
 
         if caption_x:
-            draw_x.text((10, y_x + 35), caption_x, fill="yellow", font=font_small_x)
+            caption_y_x = line2_y_x + int(height_x * 0.08)
+            draw_x.text((10, caption_y_x), caption_x, fill="yellow", font=font_small_x)
 
     # ---------- REPLY ----------
     elif template_clean_x == "reply":
-        to_line_x = f"TO: {their_call_x}" if their_call_x else "TO:"
+        to_line_x = f"{their_call_x}" if their_call_x else "TO:"
         de_line_x = f"DE: {my_call_x}"
         park_line_x = f"POTA {park_id_x}"
         rsv_line_x = f"RSV {rsv_x}" if rsv_x else ""
@@ -107,12 +124,14 @@ def render_sstv_image_x(
         y_x = height_x - bottom_bar_h_x + 5
         draw_x.text((10, y_x), park_line_x, fill="yellow", font=font_med_x)
 
+        lower_y_x = y_x + int(height_x * 0.10)
+
         if rsv_line_x:
-            rsv_w_x = draw_x.textlength(rsv_line_x, font=font_med_x)
-            draw_x.text((width_x - rsv_w_x - 5, y_x), rsv_line_x, fill="yellow", font=font_med_x)
+            draw_x.text((10, lower_y_x), rsv_line_x, fill="yellow", font=font_med_x)
+            lower_y_x += int(height_x * 0.10)
 
         lower_line_x = caption_x if caption_x else timestamp_x
-        draw_x.text((10, y_x + 30), lower_line_x, fill="yellow", font=font_small_x)
+        draw_x.text((10, lower_y_x), lower_line_x, fill="yellow", font=font_small_x)
 
     # ---------- 73 ----------
     elif template_clean_x == "73":
@@ -131,39 +150,32 @@ def render_sstv_image_x(
         lower_line_x = caption_x if caption_x else timestamp_x
         draw_x.text((10, y_x + 30), lower_line_x, fill="yellow", font=font_small_x)
 
-    # -----------FREE--------------------------
-
-
+    # ---------- FREE ----------
     elif template_clean_x == "free":
         y_top_x = 5
 
-        # Optional TO line
         if their_call_x:
             to_line_x = f"TO: {their_call_x}"
             draw_x.text((10, y_top_x), to_line_x, fill="yellow", font=font_med_x)
             y_top_x += int(height_x * 0.10)
 
-        # Your call at top (big, centered)
         call_w_x = draw_x.textlength(my_call_x, font=font_big_x)
         draw_x.text(
             ((width_x - call_w_x) / 2, y_top_x),
             my_call_x,
-            fill="white",
-            font=font_big_x
+            fill="yellow",
+            font=font_big_x,
         )
 
-        # Message near bottom
         if caption_x:
             msg_y_x = height_x - bottom_bar_h_x + 5
             draw_x.text((10, msg_y_x), caption_x, fill="yellow", font=font_med_x)
 
-        # Timestamp small
-        time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
         draw_x.text(
-            (width_x - time_w_x - 5, height_x - 20),
+            (10, height_x - 20),
             timestamp_x,
             fill="yellow",
-            font=font_small_x
+            font=font_small_x,
         )
 
     # ---------- FALLBACK ----------
