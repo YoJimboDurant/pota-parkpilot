@@ -66,6 +66,18 @@ def render_sstv_image_x(
 
     # ---------- CQ ----------
     if template_clean_x == "cq":
+        draw_x.text((10, 5), "CQ SSTV", fill="white", font=font_big_x)
+
+        y_x = height_x - bottom_bar_h_x + 5
+        draw_x.text((10, y_x), my_call_x, fill="white", font=font_big_x)
+
+        time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
+        draw_x.text((width_x - time_w_x - 5, y_x + 10), timestamp_x, fill="white", font=font_small_x)
+
+        if caption_x:
+            draw_x.text((10, y_x + 35), caption_x, fill="white", font=font_small_x)
+
+    elif template_clean_x == "cq_pota":
         draw_x.text((10, 5), "CQ SSTV POTA", fill="white", font=font_big_x)
 
         y_x = height_x - bottom_bar_h_x + 5
@@ -118,6 +130,41 @@ def render_sstv_image_x(
 
         lower_line_x = caption_x if caption_x else timestamp_x
         draw_x.text((10, y_x + 30), lower_line_x, fill="white", font=font_small_x)
+
+    # -----------FREE--------------------------
+
+
+    elif template_clean_x == "free":
+        y_top_x = 5
+
+        # Optional TO line
+        if their_call_x:
+            to_line_x = f"TO: {their_call_x}"
+            draw_x.text((10, y_top_x), to_line_x, fill="white", font=font_med_x)
+            y_top_x += int(height_x * 0.10)
+
+        # Your call at top (big, centered)
+        call_w_x = draw_x.textlength(my_call_x, font=font_big_x)
+        draw_x.text(
+            ((width_x - call_w_x) / 2, y_top_x),
+            my_call_x,
+            fill="white",
+            font=font_big_x
+        )
+
+        # Message near bottom
+        if caption_x:
+            msg_y_x = height_x - bottom_bar_h_x + 5
+            draw_x.text((10, msg_y_x), caption_x, fill="white", font=font_med_x)
+
+        # Timestamp small
+        time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
+        draw_x.text(
+            (width_x - time_w_x - 5, height_x - 20),
+            timestamp_x,
+            fill="white",
+            font=font_small_x
+        )
 
     # ---------- FALLBACK ----------
     else:
