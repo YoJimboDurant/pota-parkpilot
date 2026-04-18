@@ -50,7 +50,7 @@ def load_config() -> dict:
 # DUPLICATE CHECKS
 # ============================================================
 
-def build_contact_dup_key_x(contact_dx: dict) -> tuple[str, str, str, str, str]:
+def build_contact_dup_key_x(contact_dx: dict) -> tuple[str, str, str, str, str, str]:
     timestamp_x = str(contact_dx.get("timestamp_utc", "")).strip()
     utc_date_x = timestamp_x[:10] if len(timestamp_x) >= 10 else ""
 
@@ -60,6 +60,7 @@ def build_contact_dup_key_x(contact_dx: dict) -> tuple[str, str, str, str, str]:
 
     return (
         str(contact_dx.get("operator", "")).upper().strip(),
+        str(contact_dx.get("call", "")).upper().strip(),
         str(contact_dx.get("band", "")).upper().strip(),
         park_x,
         str(contact_dx.get("mode", "")).upper().strip(),
@@ -326,7 +327,17 @@ def create_app() -> Flask:
         }
 
         new_dup_key_x = build_contact_dup_key_x(contact_dx)
-        existing_dup_keys_x = {build_contact_dup_key_x(existing_dx) for existing_dx in contacts_lx}
+
+        session_contacts_lx = [
+            existing_dx
+            for existing_dx in contacts_lx
+            if str(existing_dx.get("session_id", "")).strip() == str(session_dx.session_id).strip()
+        ]
+
+        existing_dup_keys_x = {
+            build_contact_dup_key_x(existing_dx)
+            for existing_dx in session_contacts_lx
+        }
 
         if new_dup_key_x in existing_dup_keys_x:
             flash("Duplicate contact ignored.", "warning")
