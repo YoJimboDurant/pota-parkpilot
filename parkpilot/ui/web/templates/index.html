@@ -280,6 +280,14 @@
           {% endif %}
         </div>
 
+  <div class="button-row">
+  <a href="{{ url_for('sstv_upload') }}" class="button-link secondary">
+    SSTV Images
+  </a>
+</div>
+
+
+
         {% if session_dx and session_dx.status == "active" %}
         <div class="card">
           <h2>Add Contact</h2>

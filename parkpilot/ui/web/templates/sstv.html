@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSTV Upload</title>
+</head>
+<body>
+
+<h2>SSTV Image Upload</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+    <label>Image:</label><br>
+    <input type="file" name="image"><br><br>
+
+    <label>Template:</label><br>
+    <select name="template_type">
+        <option value="cq">CQ</option>
+        <option value="reply">Reply</option>
+        <option value="73">73</option>
+    </select><br><br>
+
+    <label>Their Call (for reply):</label><br>
+
+    <input type="text" name="their_call"><br><br>
+    <label>RSV:</label><br>
+    <input type="text" name="rsv" placeholder="595"><br><br>
+
+    <label>Caption:</label><br>
+    <input type="text" name="caption"><br><br>
+
+    <button type="submit">Render</button>
+
+</form>
+
+<div class="button-row">
+  <a href="{{ url_for('index') }}" class="button-link secondary">
+    Back to Logger
+  </a>
+</div>
+
+
+</body>
+</html>

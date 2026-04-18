@@ -11,5 +11,12 @@
   "operator_field": "OPERATOR",
   "park_source_field": "MY_SIG_INFO",
   "park_regex": "US-\\d+",
-  "poll_seconds": 2
+  "poll_seconds": 2,
+  "sstv": {
+    "enabled": false,
+    "uploads_dir": "data/sstv/uploads",
+    "rendered_dir": "data/sstv/rendered",
+    "qsstv_image_dir": "",
+    "auto_copy_to_qsstv": false
+  }
 }

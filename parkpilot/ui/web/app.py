@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -24,6 +25,9 @@ from parkpilot.core.session_manager import (
     start_or_resume_session,
 )
 
+from parkpilot.utils.sstv_render import render_sstv_image_x
+
+
 # ============================================================
 # PATHS
 # ============================================================
@@ -32,6 +36,13 @@ WEB_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = WEB_DIR / "templates"
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_PATH = PROJECT_ROOT / "config" / "parkpilot_config.json"
+
+
+def resolve_config_path_x(path_value_x: str) -> Path:
+    path_x = Path(path_value_x)
+    if path_x.is_absolute():
+        return path_x
+    return PROJECT_ROOT / path_x
 
 
 # ============================================================
@@ -43,7 +54,46 @@ def load_config() -> dict:
         cfg_dx = json.load(fx)
 
     cfg_dx["operators"] = [op.upper().strip() for op in cfg_dx.get("operators", [])]
+
+    sstv_dx = cfg_dx.get("sstv", {})
+    cfg_dx["sstv"] = {
+        "enabled": bool(sstv_dx.get("enabled", False)),
+        "uploads_dir": str(sstv_dx.get("uploads_dir", "data/sstv/uploads")),
+        "rendered_dir": str(sstv_dx.get("rendered_dir", "data/sstv/rendered")),
+        "qsstv_image_dir": str(sstv_dx.get("qsstv_image_dir", "")).strip(),
+        "auto_copy_to_qsstv": bool(sstv_dx.get("auto_copy_to_qsstv", False)),
+    }
+
     return cfg_dx
+
+
+# ============================================================
+# Path for SSTV
+# ============================================================
+
+
+def maybe_copy_to_qsstv(rendered_path_x: Path, cfg_dx: dict) -> None:
+    sstv_dx = cfg_dx.get("sstv", {})
+
+    if not sstv_dx.get("enabled"):
+        return
+
+    if not sstv_dx.get("auto_copy_to_qsstv"):
+        return
+
+    qsstv_dir_x = str(sstv_dx.get("qsstv_image_dir", "")).strip()
+    if not qsstv_dir_x:
+        return
+
+    target_dir_x = Path(qsstv_dir_x)
+
+    if not target_dir_x.exists():
+        return
+
+    target_path_x = target_dir_x / rendered_path_x.name
+
+    shutil.copy2(rendered_path_x, target_path_x)
+
 
 
 # ============================================================
@@ -355,7 +405,6 @@ def create_app() -> Flask:
         session_dx = get_current_session()
         paths_lx = export_all_adif_for_session(session_dx.session_id)
 
-        # For now just return first file (we’ll zip later)
         return send_file(paths_lx[0], as_attachment=True)
 
     @app.route("/export/adif/current/<operator_x>")
@@ -379,5 +428,57 @@ def create_app() -> Flask:
     @app.route("/api/session_status", methods=["GET"])
     def api_session_status():
         return jsonify(build_session_status_dx())
+
+    @app.route("/sstv", methods=["GET", "POST"])
+    def sstv_upload():
+        cfg_dx = load_config()
+        sstv_dx = cfg_dx["sstv"]
+
+        uploads_dir_x = resolve_config_path_x(sstv_dx["uploads_dir"])
+        rendered_dir_x = resolve_config_path_x(sstv_dx["rendered_dir"])
+
+        uploads_dir_x.mkdir(parents=True, exist_ok=True)
+        rendered_dir_x.mkdir(parents=True, exist_ok=True)
+
+        if request.method == "POST":
+            file_x = request.files.get("image")
+            template_type_x = request.form.get("template_type", "cq")
+            their_call_x = request.form.get("their_call", "").upper().strip()
+            caption_x = request.form.get("caption", "").strip()
+            rsv_x = request.form.get("rsv", "").strip()
+
+            if not file_x:
+                flash("No image uploaded", "warning")
+                return redirect(url_for("sstv_upload"))
+
+            session_dx = get_current_session()
+
+            if session_dx is None:
+                flash("No active session", "warning")
+                return redirect(url_for("sstv_upload"))
+
+            filename_x = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.jpg"
+
+            upload_path_x = uploads_dir_x / filename_x
+            file_x.save(upload_path_x)
+
+            output_path_x = rendered_dir_x / filename_x
+
+            render_sstv_image_x(
+                input_path_x=upload_path_x,
+                output_path_x=output_path_x,
+                template_type_x=template_type_x,
+                my_call_x=session_dx.active_operator,
+                park_id_x=session_dx.park_id,
+                their_call_x=their_call_x,
+                rsv_x=rsv_x,
+                caption_x=caption_x,
+            )
+            maybe_copy_to_qsstv(output_path_x, cfg_dx)
+
+            flash(f"Rendered SSTV image: {output_path_x.name}", "success")
+            return redirect(url_for("sstv_upload"))
+
+        return render_template("sstv.html")
 
     return app
