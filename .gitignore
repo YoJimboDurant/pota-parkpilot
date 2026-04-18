@@ -30,3 +30,9 @@ data/exports/*
 data/sessions/*
 !data/exports/.gitkeep
 !data/sessions/.gitkeep
+
+# images
+data/sstv/uploads/*
+data/sstv/rendered/*
+!data/sstv/uploads/.gitkeep
+!data/sstv/rendered/.gitkeep
