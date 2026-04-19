@@ -59,7 +59,7 @@ def render_sstv_image_x(
     # ---------- FONTS ----------
     font_big_x = load_font_x(int(height_x * 0.15))
     font_med_x = load_font_x(int(height_x * 0.07))
-    font_small_x = load_font_x(int(height_x * 0.05))
+    font_small_x = load_font_x(int(height_x * 0.03))
 
     # ---------- OVERLAY BARS ----------
     top_bar_h_x = int(height_x * 0.18)
