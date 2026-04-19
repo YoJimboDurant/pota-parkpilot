@@ -91,21 +91,33 @@ def render_sstv_image_x(
     elif template_clean_x == "cq_pota":
         draw_x.text((10, 5), "CQ SSTV POTA", fill="yellow", font=font_big_x)
 
-        y_x = height_x - bottom_bar_h_x + 5
-        draw_x.text((10, y_x), my_call_x, fill="yellow", font=font_big_x)
+        y_base_x = height_x - bottom_bar_h_x + 5
 
-        park_w_x = draw_x.textlength(park_id_x, font=font_med_x)
-        draw_x.text(((width_x - park_w_x) / 2, y_x + 5), park_id_x, fill="yellow", font=font_med_x)
+        # Call (top line in footer)
+        draw_x.text((10, y_base_x), my_call_x, fill="yellow", font=font_big_x)
 
+        # Park (below call, left aligned)
+        park_y_x = y_base_x + int(height_x * 0.15)
+        draw_x.text((10, park_y_x), park_id_x, fill="yellow", font=font_med_x)
+
+        # Timestamp (right side)
         time_w_x = draw_x.textlength(timestamp_x, font=font_small_x)
-        draw_x.text((width_x - time_w_x - 5, y_x + 10), timestamp_x, fill="yellow", font=font_small_x)
+        draw_x.text(
+            (width_x - time_w_x - 5, y_base_x + 5),
+            timestamp_x,
+            fill="yellow",
+            font=font_small_x
+        )
 
+        # Caption (bottom-most)
         if caption_x:
-            draw_x.text((10, y_x + 35), caption_x, fill="yellow", font=font_small_x)
+            caption_y_x = park_y_x + int(height_x * 0.12)
+            draw_x.text((10, caption_y_x), caption_x, fill="yellow", font=font_small_x)
+
 
     # ---------- REPLY ----------
     elif template_clean_x == "reply":
-        to_line_x = f"TO: {their_call_x}" if their_call_x else "TO:"
+        to_line_x = f"{their_call_x}" if their_call_x else "TO:"
         de_line_x = f"DE: {my_call_x}"
         park_line_x = f"POTA {park_id_x}" if park_id_x else ""
         rsv_line_x = f"RSV {rsv_x}" if rsv_x else ""
