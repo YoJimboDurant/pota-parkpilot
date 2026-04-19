@@ -142,7 +142,7 @@ def render_sstv_image_x(
     # ---------- 73 ----------
     elif template_clean_x == "73":
         headline_x = f"73 {their_call_x}" if their_call_x else "73"
-        de_line_x = f"DE: {my_call_x}"
+        de_line_x = f"{my_call_x}"
         park_line_x = f"POTA {park_id_x}" if park_id_x else ""
 
         draw_x.text((10, 5), headline_x, fill="yellow", font=font_big_x)
