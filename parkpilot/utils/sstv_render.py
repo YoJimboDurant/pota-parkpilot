@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 
 
 def load_font_x(size_x: int):
@@ -19,7 +19,35 @@ def load_font_x(size_x: int):
         return ImageFont.truetype("arial.ttf", size_x)
     except Exception:
         return ImageFont.load_default()
+    
+def apply_sstv_cartoon_x(img_x: Image.Image) -> Image.Image:
+    img_x = img_x.convert("RGB")
 
+    # Light softening only
+    base_x = img_x.filter(ImageFilter.GaussianBlur(radius=0.7))
+    base_x = base_x.filter(ImageFilter.MedianFilter(size=3))
+
+    # Gentle poster/watercolor simplification
+    base_x = ImageOps.posterize(base_x, bits=5)
+    base_x = base_x.quantize(colors=40).convert("RGB")
+
+    # Slightly richer but not insane
+    base_x = ImageEnhance.Color(base_x).enhance(1.15)
+    base_x = ImageEnhance.Contrast(base_x).enhance(1.28)
+    base_x = ImageEnhance.Brightness(base_x).enhance(1.04)
+
+    # Softer cartoon edge definition
+    edges_x = img_x.convert("L").filter(ImageFilter.FIND_EDGES)
+    edges_x = ImageEnhance.Contrast(edges_x).enhance(1.5)
+    edges_mask_x = edges_x.point(lambda p: 0 if p > 85 else 255).convert("RGB")
+
+    # Light edge blend
+    cartoon_x = Image.blend(base_x, edges_mask_x, alpha=0.10)
+
+    # Crisp final image
+    cartoon_x = ImageEnhance.Sharpness(cartoon_x).enhance(1.8)
+
+    return cartoon_x
 
 def render_sstv_image_x(
     input_path_x: Path,
@@ -30,6 +58,7 @@ def render_sstv_image_x(
     their_call_x: str = "",
     rsv_x: str = "",
     caption_x: str = "",
+    image_style_x: str = "original",
 ) -> Path:
     # ---------- LOAD IMAGE ----------
     img_x = Image.open(input_path_x).convert("RGB")
@@ -54,6 +83,19 @@ def render_sstv_image_x(
     img_x = img_x.resize((320, 256), Image.LANCZOS)
 
     width_x, height_x = img_x.size
+    
+
+ # -----------CARTOON-------------------
+
+    style_clean_x = str(image_style_x).strip().lower()
+
+    if style_clean_x in ["cartoon", "watercolor", "watercolor_cartoon"]:
+        print("[SSTV DEBUG] Applying CARTOON filter")
+        img_x = apply_sstv_cartoon_x(img_x)
+
+    # IMPORTANT:
+    # Create draw_x AFTER any filter that replaces img_x.
+    # Otherwise text may be drawn on the old image object.
     draw_x = ImageDraw.Draw(img_x)
 
     # ---------- FONTS ----------

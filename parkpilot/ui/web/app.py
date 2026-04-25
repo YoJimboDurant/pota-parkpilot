@@ -446,6 +446,7 @@ def create_app() -> Flask:
             their_call_x = request.form.get("their_call", "").upper().strip()
             caption_x = request.form.get("caption", "").strip()
             rsv_x = request.form.get("rsv", "").strip()
+            image_style_x = request.form.get("image_style", "original").strip()
 
             if not file_x:
                 flash("No image uploaded", "warning")
@@ -473,6 +474,7 @@ def create_app() -> Flask:
                 their_call_x=their_call_x,
                 rsv_x=rsv_x,
                 caption_x=caption_x,
+                image_style_x=image_style_x,
             )
             maybe_copy_to_qsstv(output_path_x, cfg_dx)
 
