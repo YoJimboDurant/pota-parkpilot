@@ -24,6 +24,7 @@ This project is functional but evolving. Expect rough edges and breaking changes
 - 📡 **Live QSO Logging**
   - Manual entry via web UI
   - Multi-operator support (e.g., KE4MKG / KS4GY)
+  - Upload ready POTA adif generation by operator
 
 - 🔄 **WSJT-X Integration**
   - Automatically imports QSOs from WSJT-X ADIF log
@@ -229,7 +230,6 @@ scripts/
 
 - 🔁 Dual-operator workflow improvements
 - 📊 Enhanced stats and visualization
-- 📤 Direct ADIF export per operator
 - 🔌 FLDIGI integration
 - 🧠 Smarter automation of logging workflows
 
