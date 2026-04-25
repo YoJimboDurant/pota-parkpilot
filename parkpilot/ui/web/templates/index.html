@@ -129,6 +129,34 @@
       margin-top: 0.5rem;
     }
 
+    .page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.75rem 0 1rem 0;
+}
+
+  .nav-pill {
+    display: inline-block;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 0.65rem 1rem;
+    font-size: 0.98rem;
+    font-weight: bold;
+    background: white;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+
+  .nav-pill:hover {
+    background: #eef4ff;
+  }
+
+  .nav-pill.active {
+    background: var(--primary);
+    color: white;
+  }
+
     button,
     .button-link {
       display: inline-block;
@@ -280,11 +308,10 @@
           {% endif %}
         </div>
 
-  <div class="button-row">
-  <a href="{{ url_for('sstv_upload') }}" class="button-link secondary">
-    SSTV Images
-  </a>
-</div>
+    <nav class="page-nav">
+      <a href="{{ url_for('index') }}" class="nav-pill active">Logger</a>
+      <a href="{{ url_for('sstv_upload') }}" class="nav-pill">SSTV Images →</a>
+    </nav>
 
 
 

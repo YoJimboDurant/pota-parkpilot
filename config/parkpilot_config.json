@@ -5,8 +5,8 @@
     "/home/pi/.local/share/WSJT-X/wsjtx_log.adi"
   ],
   "operators": [
-    "KS4GY",
-    "KE4MKG"
+    "KE4MKG",
+    "KS4GY"
   ],
   "operator_field": "OPERATOR",
   "park_source_field": "MY_SIG_INFO",

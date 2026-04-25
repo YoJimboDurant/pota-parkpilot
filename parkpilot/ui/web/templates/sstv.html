@@ -2,8 +2,51 @@
 <html>
 <head>
     <title>SSTV Upload</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 1rem;
+        background: #f6f8fa;
+        color: #1f2328;
+      }
+
+      .page-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin: 0.75rem 0 1rem 0;
+      }
+
+      .nav-pill {
+        display: inline-block;
+        text-decoration: none;
+        border-radius: 999px;
+        padding: 0.65rem 1rem;
+        font-size: 0.98rem;
+        font-weight: bold;
+        background: white;
+        color: #0d6efd;
+        border: 1px solid #0d6efd;
+      }
+
+      .nav-pill:hover {
+        background: #eef4ff;
+      }
+
+      .nav-pill.active {
+        background: #0d6efd;
+        color: white;
+      }
+    </style>
 </head>
 <body>
+
+<nav class="page-nav">
+  <a href="{{ url_for('index') }}" class="nav-pill">← Logger</a>
+  <a href="{{ url_for('sstv_upload') }}" class="nav-pill active">SSTV Images</a>
+</nav>
+
 
 <h2>SSTV Image Upload</h2>
 
@@ -35,12 +78,6 @@
     <button type="submit">Render</button>
 
 </form>
-
-<div class="button-row">
-  <a href="{{ url_for('index') }}" class="button-link secondary">
-    Back to Logger
-  </a>
-</div>
 
 
 </body>
